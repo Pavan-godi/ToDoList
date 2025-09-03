@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>✨ Todo Flow — Minimal, Handy To-Do App</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 24 24'%3E%3Cpath fill='%2300bcd4' d='M10 17l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z'/%3E%3C/svg%3E" />
+  <style>
+    /* 🎨 Styling */
+    :root{
+      --bg: #0b1020;
+      --panel: #121735;
+      --muted: #9aa4c7;
+      --text: #e9edff;
+      --accent: #7c5cff;
+      --accent-2: #3cd5ff;
+      --ok: #13d6a2;
+      --warn: #ffd166;
+      --danger:#ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 1200px at 20% -10%, rgba(124,92,255,.25), transparent 40%),
+                  radial-gradient(1000px 1000px at 120% 20%, rgba(60,213,255,.18), transparent 40%),
+                  var(--bg);
+    }
+    .container{max-width:1100px;margin:28px auto;padding:16px;}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .brand{display:flex;align-items:center;gap:14px;}
+    .logo{width:42px;height:42px;display:grid;place-content:center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius:14px;box-shadow:var(--shadow)}
+    .title{font-size:24px;font-weight:700;letter-spacing:.2px}
+    .muted{color:var(--muted)}
+    .panel{background:rgba(18,23,53,.75); backdrop-filter: blur(8px);
+      border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr; gap:16px}
+    @media (max-width: 940px){ .grid{grid-template-columns:1fr} }
+    form#creator{display:grid;grid-template-columns:1.1fr .6fr .5fr .4fr auto; gap:12px; padding:16px;
+      border-bottom:1px solid rgba(255,255,255,.06);}
+    @media (max-width: 900px){form#creator{grid-template-columns:1fr 1fr;grid-auto-rows:auto}}
+    input, select, button, textarea{
+      outline:none;border:none;border-radius:12px;padding:12px 14px;background:#0e1330;color:var(--text);
+    }
+    input::placeholder, textarea::placeholder{color:#8a93b8}
+    button{cursor:pointer;font-weight:600;
+      background:linear-gradient(135deg, var(--accent), var(--accent-2));
+      transition: transform .04s ease, filter .2s ease; box-shadow:var(--shadow)}
+    button:hover{filter:brightness(1.05)}
+    button:active{transform: translateY(1px) scale(.99)}
+    .ghost{background:#0e1330;border:1px dashed #2a3567;box-shadow:none}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;align-items:center;justify-content:space-between}
+    .toolbar .left, .toolbar .right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .chip{background:#0e1330;padding:8px 10px;border-radius:999px;border:1px solid #2a3567;color:#cbd3ff}
+    .search{min-width:220px}
+    .list{padding:8px}
+    .task{display:grid;grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+      padding:12px;border-radius:14px;margin:10px 8px;background:#0e1330;border:1px solid #2a3567;}
+    .task h4{margin:0 0 4px 0;font-size:16px}
+    .task small{color:#a8b1da}
+    .badges{display:flex;gap:6px;flex-wrap:wrap}
+    .badge{padding:4px 8px;border-radius:999px;font-size:12px}
+    .b-low{background:#20334d}
+    .b-med{background:#40345a}
+    .b-high{background:#4a263e}
+    .b-over{background:#3c2626}
+    .actions button{padding:8px 10px;border-radius:10px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+    .card{padding:16px;border-radius:16px;background:#0e1330;border:1px solid #2a3567;text-align:center}
+    .card h3{margin:0}.card p{margin:4px 0 0 0;color:#a8b1da}
+    footer{margin-top:14px;display:flex;justify-content:space-between;color:#97a0c4;padding:6px 2px}
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">✅</div>
+        <div>
+          <div class="title">Todo Flow</div>
+          <div class="muted">Plan it. Do it. Done.</div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="exportBtn" title="Export tasks as JSON">Export</button>
+        <button class="ghost" id="importBtn" title="Import from JSON">Import</button>
+        <input class="hidden" type="file" id="filePicker" accept="application/json"/>
+      </div>
+    </header>
+
+    <!-- Form -->
+    <section class="panel">
+      <form id="creator">
+        <input id="title" placeholder="Add a new task… e.g., Revise SQL joins" required />
+        <input id="due" type="date" />
+        <select id="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        <input id="category" placeholder="Category (Work, Study…)" />
+        <button type="submit">Add Task</button>
+      </form>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="left">
+          <select id="filterStatus" class="chip">
+            <option value="all" selected>All</option>
+            <option value="open">Open</option>
+            <option value="done">Done</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <select id="filterPriority" class="chip">
+            <option value="all" selected>Any priority</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input id="filterCategory" class="chip" placeholder="Filter category…" />
+          <button class="ghost" id="clearCompleted">Clear Completed</button>
+        </div>
+        <div class="right">
+          <input id="search" class="search chip" placeholder="Search tasks…" />
+          <select id="sort" class="chip">
+            <option value="created_desc">Newest</option>
+            <option value="created_asc">Oldest</option>
+            <option value="due_asc">Due date ↑</option>
+            <option value="due_desc">Due date ↓</option>
+            <option value="priority_desc">Priority High→Low</option>
+            <option value="priority_asc">Priority Low→High</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="list" class="list"></div>
+
+      <div class="stats">
+        <div class="card"><h3 id="statTotal">0</h3><p>Total</p></div>
+        <div class="card"><h3 id="statDone">0</h3><p>Completed</p></div>
+        <div class="card"><h3 id="statOverdue">0</h3><p>Overdue</p></div>
+      </div>
+    </section>
+
+    <footer>
+      <div>Made with ❤️ — stores data in your browser only</div>
+      <div id="version"></div>
+    </footer>
+  </div>
+
+  <script>
+    const APP_VERSION = "1.0.0";
+    const storageKey = "todo-flow:v1";
+    const priorities = {low:1, medium:2, high:3};
+    let state = {tasks:[]};
+
+    const $ = (sel, root=document)=>root.querySelector(sel);
+    const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
+
+    function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2); }
+    function save(){ localStorage.setItem(storageKey, JSON.stringify(state)); }
+    function load(){ const raw = localStorage.getItem(storageKey); if(raw) state = JSON.parse(raw); render(); }
+
+    function addTask({title,due="",priority="medium",category="",done=false}){
+      state.tasks.unshift({id:uid(),title:title.trim(),due,priority,category:category.trim(),done,createdAt:Date.now()});
+      save(); render();
+    }
+    function toggleTask(id){ const t=state.tasks.find(x=>x.id===id); if(t){t.done=!t.done;save();render();} }
+    function deleteTask(id){ state.tasks=state.tasks.filter(x=>x.id!==id); save(); render(); }
+    function clearCompleted(){ state.tasks=state.tasks.filter(x=>!x.done); save(); render(); }
+    function isOverdue(t){ if(!t.due||t.done)return false; return new Date(t.due)<new Date().setHours(0,0,0,0); }
+
+    function matchesFilters(t){
+      const status=$("#filterStatus").value, pr=$("#filterPriority").value, cat=$("#filterCategory").value.trim().toLowerCase(), q=$("#search").value.trim().toLowerCase();
+      if(status==="open"&&t.done) return false;
+      if(status==="done"&&!t.done) return false;
+      if(status==="overdue"&&!isOverdue(t)) return false;
+      if(pr!=="all"&&t.priority!==pr) return false;
+      if(cat&&(!t.category||!t.category.toLowerCase().includes(cat))) return false;
+      if(q&&!((t.title+" "+t.category).toLowerCase().includes(q))) return false;
+      return true;
+    }
+
+    function sortTasks(tasks){
+      const val=$("#sort").value, copy=[...tasks];
+      const byDue=(a,b)=>(a.due?Date.parse(a.due):Infinity)-(b.due?Date.parse(b.due):Infinity);
+      const byCreated=(a,b)=>a.createdAt-b.createdAt;
+      const byPriority=(a,b)=>priorities[a.priority]-priorities[b.priority];
+      switch(val){
+        case "created_desc":return copy.sort((a,b)=>byCreated(b,a));
+        case "created_asc":return copy.sort(byCreated);
+        case "due_asc":return copy.sort(byDue);
+        case "due_desc":return copy.sort((a,b)=>byDue(b,a));
+        case "priority_desc":return copy.sort((a,b)=>byPriority(b,a));
+        case "priority_asc":return copy.sort(byPriority);
+        default:return copy;
+      }
+    }
+
+    function render(){
+      $("#version").textContent="v"+APP_VERSION;
+      const list=$("#list"); list.innerHTML="";
+      const filtered=sortTasks(state.tasks.filter(matchesFilters));
+      for(const t of filtered){
+        const el=document.createElement("div"); el.className="task"; el.dataset.id=t.id;
+        el.innerHTML=`<input type="checkbox" ${t.done?"checked":""}>
+        <div><h4 style="text-decoration:${t.done?'line-through':'none'}">${t.title}</h4>
+        <small>${t.due?("Due "+new Date(t.due).toLocaleDateString()):"No due date"}</small></div>
+        <div class="actions"><button class="ghost del">Delete</button></div>`;
+        $("input",el).addEventListener("change",()=>toggleTask(t.id));
+        $(".del",el).addEventListener("click",()=>deleteTask(t.id));
+        list.appendChild(el);
+      }
+      $("#statTotal").textContent=state.tasks.length;
+      $("#statDone").textContent=state.tasks.filter(t=>t.done).length;
+      $("#statOverdue").textContent=state.tasks.filter(isOverdue).length;
+    }
+
+    $("#creator").addEventListener("submit",e=>{
+      e.preventDefault();
+      const title=$("#title").value.trim(); if(!title) return;
+      addTask({title,due:$("#due").value,priority:$("#priority").value,category:$("#category").value});
+      $("#creator").reset();
+    });
+    ["filterStatus","filterPriority","filterCategory","search","sort"].forEach(id=>$("#"+id).addEventListener("input",render));
+    $("#clearCompleted").addEventListener("click",()=>{if(confirm("Clear all completed?"))clearCompleted();});
+    $("#exportBtn").addEventListener("click",()=>{
+      const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="todo-flow.json"; a.click();
+    });
+    $("#importBtn").addEventListener("click",()=>$("#filePicker").click());
+    $("#filePicker").addEventListener("change",async e=>{
+      const f=e.target.files[0]; if(!f) return; const txt=await f.text();
+      try{const d=JSON.parse(txt); if(d.tasks){state=d;save();render();}}catch(err){alert("Invalid file");}
+    });
+
+    load();
+  </script>
+</body>
+</html>
